@@ -23,4 +23,8 @@ sucralose <- sucralose_raw|>
 #removing duplicates and blanks 
 sucralose_no_dup <- subset(sucralose,duplicate == "N")
 sucralose_no_dup_blank <- subset(sucralose, blank == "N")
+
+#looking for false positives in DI blanks
+false_pos <- sucralose|>
+  filter(detect_flag == "Y"& blank == "Y")
 ```

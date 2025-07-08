@@ -1,0 +1,52 @@
+---
+title: "streamflow_analysis"
+format: html
+
+execute: 
+  echo: false
+  warning: false
+---
+
+```{r}
+#What days have flow higher than 300 cfs?
+high_flow_days_300<-tibble(
+  filter(gages, cfs>300))
+```
+
+```{r}
+#What days have no flow/ 0 cfs?
+zero_flow_days<-tibble(
+  filter(gages, cfs==0))
+```
+
+```{r}
+#What are the median monthly flows for each gage?
+by_gage_month <- gages|>
+  group_by(gage_name,month)|>
+  summarise(flow_mean = mean(cfs,na.rm=TRUE))|>
+  ungroup()
+```
+
+```{r}
+#What is the average flow per year at each gage?
+mean_flow_gage_year <- gages |>
+  group_by(gage_name,year)|>
+  summarise(mean_flow = mean(cfs,na.rm=TRUE))|>
+  ungroup()
+```
+
+```{r}
+#What day had the highest median flow?
+peak_monthday_flows <-gages|>
+  group_by(gage_name,month,day)|>
+  summarise(median_flow = median(cfs,na.rm=TRUE))|>
+  ungroup()|>
+  group_by(gage_name)|>
+  arrange(desc(median_flow))|>
+  slice(1:1)|>
+  ungroup()
+```
+
+```{r}
+
+```

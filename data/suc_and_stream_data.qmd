@@ -1,0 +1,11 @@
+---
+title: "suc_and_stream_data"
+format: html
+---
+Combining stream and suc data into one dataset
+```{r}
+#adding stream and sucralose data together for future use
+stream_sucralose <- sucralose_no_dup_blank|>
+  left_join(gages, join_by(Date,gage_name))|>
+  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)
+```

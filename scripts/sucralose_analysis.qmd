@@ -1,0 +1,88 @@
+---
+title: "sucralose_analysis"
+format: html
+
+execute: 
+  warning: false
+  echo: true
+---
+
+Playing around with sucralose data
+
+```{r}
+#How does avg sucralose vary throughout the months at each gage?
+
+sucralose_plot <- sucralose|>
+  group_by(gage_name,month)|>
+  summarize(sucralose_mean = mean(result_value, na.rm=TRUE))|>
+  ungroup()|>
+  ggplot(aes(month, sucralose_mean, color=gage_name))+
+  geom_point()+
+  scale_x_continuous(breaks=c(1,2,3,4,5,6,7,8,9,10,11,12))+
+  labs(
+    title = "Sucralose by Gage and Month",
+    subtitle = "Comal and San Marcos Rivers",
+    x = "Month", y = "Average Sucralose (ng/L)")+
+  theme(axis.title.x = element_text(margin = margin(t=5)),
+        axis.title.y = element_text(margin = margin(r=10)))+
+  scale_color_discrete(
+    name = "Gage",
+    labels = c("Comal River Spring Run 3", "San Marcos Springs Hotel Site"))
+```
+```{r}
+#How do average sucralose levels compare between gages?
+suc_by_gage <- stream_sucralose|>
+  ggplot()+
+  geom_boxplot(aes(gage_name,result_value, color = gage_name, 
+                   fill = after_scale(clr_desaturate(
+                     clr_lighten(color,.8),.8))),linewidth = 0.65)+
+  labs(
+    title = "Sucralose Levels by Gage",
+    x = "Gage",
+    y = "Sucralose (ng/L)")+
+  theme(legend.position = "none")
+```
+
+```{r}
+#How does sucralose vary with flow? Does it change when considering average flows from the previous weeks/month?
+plot1 <- stream_sucralose|>
+ggplot()+
+  geom_point(aes(avg_30_prior,result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
+  theme(legend.position = "none",)+
+  labs(
+    x = "30-day Prior Avg Flow (cfs)",
+    y = "Sucralose (ng/L)")
+
+plot2 <- stream_sucralose|>
+  ggplot()+
+  geom_point(aes(avg_10_prior, result_value, color = gage_name,shape = gage_name),na.rm = TRUE)+
+  theme(legend.position = "none")+
+  labs(
+  title = "Sucralose Levels by Flow",
+    subtitle = "Comal and San Marcos Springs",
+  x = "10-day Prior Avg Flow (cfs)",
+  y = "Sucralose (ng/L)")
+
+plot3 <- stream_sucralose|>
+  ggplot()+
+  geom_point(aes(avg_60_prior, result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
+  theme(legend.position = "bottom",
+        legend.margin = margin(l=220),
+        legend.title = element_blank())+
+  labs(
+    x = "60-day Prior Avg Flow (cfs)",
+    y = "Sucralose (ng/L)")
+
+plot4 <- stream_sucralose|>
+  ggplot()+
+  geom_point(aes(cfs,result_value,color=gage_name,shape=gage_name),na.rm=TRUE)+
+  theme(legend.position = "none")+
+  labs(
+    x = "Day-of Flow (cfs)",
+    y = "Sucralose (ng/L)")
+
+```
+
+```{r}
+
+```

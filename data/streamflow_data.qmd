@@ -25,8 +25,7 @@ gages<- df|>
     year = year(dateTime), 
     month = month(dateTime), 
     day = day(dateTime))|> 
-  rename( cfs = Flow_Inst, Date = dateTime)|> 
-  select(site_no,gage_name,Date,year,month,day,cfs)
+  rename( cfs = Flow_Inst, Date = dateTime)
 ```
 
 How can I add columns for average flow (cfs) from several days/a month prior to a specific date?
@@ -38,6 +37,29 @@ gages <- gages|>
   mutate(
     avg_30_prior = rollmean(cfs,30,na.pad = TRUE, align = "right"),
     avg_60_prior = rollmean(cfs,60,na.pad = TRUE, align = "right"),
-    avg_10_prior = rollmean(cfs,10,na.pad = TRUE, align = "right"))
-write_csv(gages,"gages.csv")
+    avg_10_prior = rollmean(cfs,10,na.pad = TRUE, align = "right"))|>
+  select(site_no,gage_name,Date,year,month,day,cfs,avg_10_prior,avg_30_prior,avg_60_prior)
+#write.csv(gages,"gages.csv")
+```
+
+Reading in sucralose data and adjusting columns
+
+```{r}
+(sucralose_raw <- readr::read_csv("sucralose_simplified.csv", col_types = cols(
+  Date = col_date("%m.%d.%Y"),)))
+```
+
+Creating various tibbles from the sucralose data for future analysis 
+```{r}
+#organizing and adding new columns to raw suc dataset
+sucralose <- sucralose_raw|>
+  mutate(add_column(sucralose_raw,
+    gage_name = case_when(
+      str_detect(sys_sample_code, "CM") ~ "Comal Springs",
+      str_detect(sys_sample_code, "SM") ~ "San Marcos Springs")))|>
+  relocate("gage_name",.before="Date")
+
+#removing duplicates and blanks 
+sucralose_no_dup <- subset(sucralose,duplicate == "N")
+sucralose_no_dup_blank <- subset(sucralose, blank == "N")
 ```

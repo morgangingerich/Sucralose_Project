@@ -1,0 +1,26 @@
+---
+title: "sucralose_data"
+format: html
+---
+
+Reading in sucralose data and adjusting columns
+
+```{r}
+(sucralose_raw <- readr::read_csv("sucralose_simplified.csv", col_types = cols(
+  Date = col_date("%m.%d.%Y"),)))
+```
+
+Creating various tibbles from the sucralose data for future analysis 
+```{r}
+#organizing and adding new columns to raw suc dataset
+sucralose <- sucralose_raw|>
+  mutate(add_column(sucralose_raw,
+    gage_name = case_when(
+      str_detect(sys_sample_code, "CM") ~ "Comal Springs",
+      str_detect(sys_sample_code, "SM") ~ "San Marcos Springs")))|>
+  relocate("gage_name",.before="Date")
+
+#removing duplicates and blanks 
+sucralose_no_dup <- subset(sucralose,duplicate == "N")
+sucralose_no_dup_blank <- subset(sucralose, blank == "N")
+```

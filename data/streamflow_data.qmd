@@ -1,0 +1,44 @@
+---
+title: "streamflow_data"
+execute: 
+  echo: false
+format: html
+---
+
+Pulling data from USGS and combining into gages csv
+
+```{r}
+library("tidyverse")
+library("ggplot2")
+library("dataRetrieval") 
+sms <-readNWISuv(siteNumbers = "08170000", 
+                 parameterCd = "00060") 
+cs <-readNWISuv(siteNumbers = "08168710", 
+                parameterCd = "00060") 
+df<-bind_rows(sms,cs)|> renameNWISColumns(df)
+
+gages<- df|> 
+  mutate( gage_name = case_when(
+    site_no=="08170000"~"San Marcos Springs", 
+    site_no=="08168710"~"Comal Springs"), 
+    dateTime = date(dateTime), 
+    year = year(dateTime), 
+    month = month(dateTime), 
+    day = day(dateTime))|> 
+  rename( cfs = Flow_Inst, Date = dateTime)|> 
+  select(site_no,gage_name,Date,year,month,day,cfs)
+
+#write_csv(gages,"gages.csv")
+```
+
+How can I add columns for average flow (cfs) from several days/a month prior to a specific date?
+
+```{r}
+library("zoo")
+gages <- gages|>
+  arrange(Date)|>
+  mutate(
+    avg_30_prior = rollmean(cfs,30,na.pad = TRUE, align = "right"),
+    avg_60_prior = rollmean(cfs,60,na.pad = TRUE, align = "right"),
+    avg_10_prior = rollmean(cfs,10,na.pad = TRUE, align = "right"))
+```

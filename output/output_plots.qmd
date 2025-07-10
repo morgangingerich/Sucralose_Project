@@ -57,7 +57,7 @@ false_pos <- sucralose|>
 
 stream_sucralose <- sucralose_no_dup_blank|>
   left_join(gages, join_by(Date,gage_name))|>
-  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)
+  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
 
 ```
 
@@ -187,6 +187,7 @@ Do suc levels vary with streamflow from previous days?
 
 ```{r}
 plot1 <- stream_sucralose|>
+  filter(detect_flag == "Y")|> #removing non-detects
 ggplot()+
   geom_point(aes(avg_30_prior,result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
   theme(legend.position = "none",)+
@@ -195,6 +196,7 @@ ggplot()+
     y = "Sucralose (ng/L)")
 
 plot2 <- stream_sucralose|>
+  filter(detect_flag == "Y")|>
   ggplot()+
   geom_point(aes(avg_10_prior, result_value, color = gage_name,shape = gage_name),na.rm = TRUE)+
   theme(legend.position = "none")+
@@ -205,6 +207,7 @@ plot2 <- stream_sucralose|>
   y = "Sucralose (ng/L)")
 
 plot3 <- stream_sucralose|>
+  filter(detect_flag == "Y")|>
   ggplot()+
   geom_point(aes(avg_60_prior, result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
   theme(legend.position = "bottom",
@@ -215,6 +218,7 @@ plot3 <- stream_sucralose|>
     y = "Sucralose (ng/L)")
 
 plot4 <- stream_sucralose|>
+  filter(detect_flag == "Y")|>
   ggplot()+
   geom_point(aes(cfs,result_value,color=gage_name,shape=gage_name),na.rm=TRUE)+
   theme(legend.position = "none")+

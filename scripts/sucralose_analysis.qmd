@@ -34,7 +34,7 @@ gages <- gages|>
 
 stream_sucralose <- sucralose_no_dup_blank|>
   left_join(gages, join_by(Date,gage_name))|>
-  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)
+  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
 
 sucralose <- sucralose_raw|>
   mutate(add_column(sucralose_raw,
@@ -121,3 +121,15 @@ plot4 <- stream_sucralose|>
     y = "Sucralose (ng/L)")
 
 ```
+
+Calculating SUC load in g/day for each gage and day
+```{r}
+load <- stream_sucralose|>
+  mutate(
+    load = cfs*result_value*0.0024468)
+
+load|>
+  ggplot()+
+  geom_point(aes(Date,load, color = gage_name))
+```
+

@@ -6,7 +6,14 @@ execute:
   output: true
   echo: false
 ---
-```{r}
+```{r include: false}
+library("tidyverse")
+library("ggplot2")
+library("sf")
+library("prismatic")
+library("zoo")
+theme(theme_bw())
+
 #Bringing in data
 gages<- df|> 
   mutate( gage_name = case_when(
@@ -18,9 +25,16 @@ gages<- df|>
     day = day(dateTime))|> 
   rename( cfs = Flow_Inst, Date = dateTime)
 
-stream_sucralose <- sucralose_no_dup_blank|>
-  left_join(gages, join_by(Date,gage_name))|>
-  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)
+gages <- gages|>
+  arrange(Date)|>
+  mutate(
+    avg_30_prior = rollmean(cfs,30,na.pad = TRUE, align = "right"),
+    avg_60_prior = rollmean(cfs,60,na.pad = TRUE, align = "right"),
+    avg_10_prior = rollmean(cfs,10,na.pad = TRUE, align = "right"))|>
+  select(site_no,gage_name,Date,year,month,day,cfs,avg_10_prior,avg_30_prior,avg_60_prior)
+
+(sucralose_raw <- readr::read_csv("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/data/sucralose_simplified.csv", col_types = cols(
+  Date = col_date("%m.%d.%Y"),)))
 
 sucralose <- sucralose_raw|>
   mutate(add_column(sucralose_raw,
@@ -31,20 +45,17 @@ sucralose <- sucralose_raw|>
 
 sucralose_no_dup <- subset(sucralose,duplicate == "N")
 sucralose_no_dup_blank <- subset(sucralose, blank == "N")
-
 false_pos <- sucralose|>
   filter(detect_flag == "Y"& blank == "Y")
-```
-### Springflow plots
-```{r}
-library("tidyverse")
-library("ggplot2")
-library("sf")
-library("prismatic")
-theme(theme_bw())
-```
-Showing average springflow (cfs) over 4 time periods by gage
 
+stream_sucralose <- sucralose_no_dup_blank|>
+  left_join(gages, join_by(Date,gage_name))|>
+  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)
+
+```
+
+### Springflow plots
+Showing average springflow (cfs) over 4 time periods by gage
 ```{r}
 avg <- gages|>
   group_by(gage_name)|>

@@ -7,11 +7,8 @@ execute:
   echo: true
 ---
 
-Playing around with sucralose data
-
+How does avg sucralose vary throughout the months at each gage?
 ```{r}
-#How does avg sucralose vary throughout the months at each gage?
-
 sucralose_plot <- sucralose|>
   group_by(gage_name,month)|>
   summarize(sucralose_mean = mean(result_value, na.rm=TRUE))|>
@@ -29,8 +26,8 @@ sucralose_plot <- sucralose|>
     name = "Gage",
     labels = c("Comal River Spring Run 3", "San Marcos Springs Hotel Site"))
 ```
+How do average sucralose levels compare between gages?
 ```{r}
-#How do average sucralose levels compare between gages?
 suc_by_gage <- stream_sucralose|>
   ggplot()+
   geom_boxplot(aes(gage_name,result_value, color = gage_name, 
@@ -43,8 +40,8 @@ suc_by_gage <- stream_sucralose|>
   theme(legend.position = "none")
 ```
 
+How does sucralose vary with flow? Does it change when considering average flows from the previous weeks/month?
 ```{r}
-#How does sucralose vary with flow? Does it change when considering average flows from the previous weeks/month?
 plot1 <- stream_sucralose|>
 ggplot()+
   geom_point(aes(avg_30_prior,result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
@@ -80,9 +77,5 @@ plot4 <- stream_sucralose|>
   labs(
     x = "Day-of Flow (cfs)",
     y = "Sucralose (ng/L)")
-
-```
-
-```{r}
 
 ```

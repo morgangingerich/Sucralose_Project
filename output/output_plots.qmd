@@ -1,5 +1,259 @@
 ---
 title: "output_plots"
 format: html
+
+execute: 
+  output: true
+  echo: false
 ---
 
+### Springflow plots
+
+Showing average springflow (cfs) over 4 time periods by gage
+
+```{r}
+avg <- gages|>
+  group_by(gage_name)|>
+  add_column(
+    label = "avg")|>
+    ungroup()
+
+avg_25 <- gages|>
+  group_by(gage_name)|>
+  filter(year =="2025")|>
+  add_column(
+    label = "avg_25")|>
+  ungroup()
+
+avg_5yr <- gages|>
+  group_by(gage_name,year)|>
+  filter(year %in% c("2025","2024","2023","2022","2021","2020"))|>
+  add_column(
+    label = "avg_5yr")|>
+  ungroup()
+
+avg_24 <- gages|>
+  group_by(gage_name, year)|>
+  filter(year == "2024")|>
+  add_column(
+    label = "avg_24")|>
+  ungroup()
+
+avgs <- bind_rows(avg_24,avg_25,avg_5yr,avg)|>
+  select(gage_name,cfs,label)
+
+avgs$label <- factor(avgs$label,
+                    levels = c("avg_24","avg_25","avg_5yr","avg"))
+
+ggplot(avgs, aes(gage_name,cfs, color = label))+
+  geom_boxplot(aes(gage_name,cfs, color = label, fill = after_scale(clr_desaturate(clr_lighten(color,.8),.8))),linewidth = 0.65)+
+  stat_summary(fun=mean, geom = "point",shape = 4, position = position_dodge2(
+    width = 0.75, preserve = "single"))+
+  labs(
+    title = "Average Springflow over Time",
+    subtitle = "Comal Springs and San Marcos Springs",
+    y = "Springflow (cfs)",
+    x = "")+
+  scale_color_discrete(name = element_blank(),
+                       labels = c("2024","2025","5-year","Long-term"))+
+  theme(legend.title = element_blank(),
+        legend.position = "top",
+        axis.title.y = element_text(margin = margin(r = 10)))
+```
+
+Showing average flow for each year with cfs data for comal and sm
+
+```{r}
+mean_flow_gage_year <- gages |>
+  group_by(gage_name,year)|>
+  summarise(mean_flow = mean(cfs,na.rm=TRUE))|>
+  ungroup()
+mean_flow_gage_year
+
+p5 <- ggplot(mean_flow_gage_year)+
+  geom_line(aes(year,mean_flow, color = gage_name))+
+  geom_smooth(aes(year,mean_flow),
+              color = "darkgrey",linetype = "dashed", se = FALSE)+
+  labs(
+    title = "Annual Mean Flow by Gage",
+    x = "Year",
+    y = "Mean Flow (cfs)"
+  )+
+  theme(legend.title = element_blank(),
+        legend.position = "none")+
+  facet_wrap(~gage_name)
+```
+
+Showing daily flow by gage, with dotted lines representing flow goal min and max for each gage
+
+```{r}
+cfs_plot_cs <- streams|>
+  filter(gage_name =="Comal Springs")|>
+  ggplot()+
+  geom_line(aes(x = Date, y = cfs), color = "salmon", lwd = 0.75)+
+  facet_wrap(~gage_name)+
+  theme(legend.position = "none",
+        axis.title.x = element_blank())
+
+cfs_plot_sms <- streams|>
+  filter(gage_name =="San Marcos Springs")|>
+  ggplot()+
+  geom_line(aes(x = Date, y = cfs), color = "turquoise", lwd = 0.75)+
+  facet_wrap(~gage_name)+
+  theme(legend.position = "none",
+        axis.title.x = element_blank())
+
+cfs_plot_cs + geom_hline(yintercept = c(225,30), linetype = "dashed", color = c("springgreen3","red"))+
+cfs_plot_sms + geom_hline(yintercept = c(140,80), linetype = "dashed", color = c("springgreen3", 'red'))+ plot_annotation('Daily Flow by Gage', caption = 'Source: USGS',theme=theme(plot.title=element_text(hjust=0.5)))
+```
+
+### Sucralose plots
+How can I determine the avg and range of suc levels detected in the edwards?
+```{r}
+suc_plot <- stream_sucralose|>
+  ggplot()+
+  geom_boxplot(aes(gage_name,result_value, color = gage_name, 
+                   fill = after_scale(clr_desaturate(
+                     clr_lighten(color,.8),.8))),linewidth = 0.65)+
+  labs(
+    title = "Sucralose Levels by Gage",
+    x = "Gage",
+    y = "Sucralose (ng/L)")+
+  theme(legend.position = "none")
+```
+
+Do suc levels vary with streamflow from previous days? 
+```{r}
+plot1 <- stream_sucralose|>
+ggplot()+
+  geom_point(aes(avg_30_prior,result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
+  theme(legend.position = "none",)+
+  labs(
+    x = "30-day Prior Avg Flow (cfs)",
+    y = "Sucralose (ng/L)")
+
+plot2 <- stream_sucralose|>
+  ggplot()+
+  geom_point(aes(avg_10_prior, result_value, color = gage_name,shape = gage_name),na.rm = TRUE)+
+  theme(legend.position = "none")+
+  labs(
+  title = "Sucralose Levels by Flow",
+    subtitle = "Comal and San Marcos Springs",
+  x = "10-day Prior Avg Flow (cfs)",
+  y = "Sucralose (ng/L)")
+
+plot3 <- stream_sucralose|>
+  ggplot()+
+  geom_point(aes(avg_60_prior, result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
+  theme(legend.position = "bottom",
+        legend.margin = margin(l=220),
+        legend.title = element_blank())+
+  labs(
+    x = "60-day Prior Avg Flow (cfs)",
+    y = "Sucralose (ng/L)")
+
+plot4 <- stream_sucralose|>
+  ggplot()+
+  geom_point(aes(cfs,result_value,color=gage_name,shape=gage_name),na.rm=TRUE)+
+  theme(legend.position = "none")+
+  labs(
+    x = "Day-of Flow (cfs)",
+    y = "Sucralose (ng/L)")
+
+plot2+plot1+plot3+plot4
+```
+
+How have suc averages changed over time at each gage?
+```{r}
+p1 <- stream_sucralose|>
+ggplot()+
+  geom_point(aes(Date,result_value, color = gage_name), na.rm = TRUE)+
+  geom_smooth(aes(Date,result_value, color = gage_name),se=FALSE)+
+  theme(legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.margin = margin(l=220))+
+  labs(
+    title = "Sucralose Levels by Gage and Date",
+    subtitle = "Comal and San Marcos Springs",
+    x = "",
+    y = "Sucralose (ng/L)")
+
+p2 <- stream_sucralose|>
+  ggplot()+
+  geom_boxplot(aes(gage_name,result_value, color = gage_name, 
+                   fill = after_scale(clr_desaturate(
+                     clr_lighten(color,.8),.8))),linewidth = 0.65)+
+  labs(x = "",
+    y = "Sucralose (ng/L)")+
+  theme(legend.position = "none")
+
+p1+p2
+```
+
+###Suc dataset analysis
+Do duplicate measurements match their original?
+```{r}
+duplicates <- sucralose|>
+  filter(gage_name %in% c("San Marcos Springs","Comal Springs"),
+         duplicate == "Y" | lead(duplicate) == "Y")|>
+  mutate(label = case_when(
+    str_detect(duplicate, "N")~"Original",
+    str_detect(duplicate, "Y")~"Duplicate"))
+
+dup_mean <- duplicates|>
+  group_by(Date)|>
+  mutate(
+    avg = mean(result_value))|>
+  slice(1:1)|>
+  ungroup()
+
+dup_plot <- duplicates|>
+  ggplot()+
+  geom_point(data = duplicates, aes(x = Date, y = result_value, color = label, shape = label),size = 3)+
+  geom_point(data = dup_mean, aes(x = Date, y = avg), shape = 4)+
+  labs(
+    title = "Analysis of Duplicate Sucralose Measurements",
+    subtitle = "Original and Duplicate Results",
+    x = "Date",
+    y = "Sucralose (ng/L)",
+    caption = "*cross represents the average for each original/duplicate pair")+
+  theme(legend.title = element_blank())
+```
+
+Do DI blanks return the reporting detection limit?
+```{r}
+blanks_plot <- false_pos|>
+  ggplot()+
+  geom_point(aes(sys_sample_code,result_value, 
+                 color = gage_name, shape = gage_name), size = 3)+
+  geom_point(aes(sys_sample_code,reporting_detection_limit), shape = 4)+
+  labs(
+    title = "Analysis of DI Blank Measurements",
+    x = "Date",
+    y = "Sucralose (ng/L)",
+    caption = "*cross represents the reporting detection limit")+
+  theme(legend.title = element_blank())+
+  theme(legend.position = "bottom")
+```
+
+###Mapping plots
+
+```{r}
+library("sf")
+library("ggplot2")
+library("ggspatial")
+shape_points <- cbind(shape,st_coordinates(st_centroid(shape$geometry)))
+shape <- read_sf("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/gis/usgs_basins.shp")
+theme_set(theme_bw())
+ggplot(shape)+
+  geom_sf()+
+  labs(
+    title = "USGS Recharge Basins",
+    x = "Longitude",
+    y = "Latitude"
+  )+
+  geom_text(data = shape_points,aes(x=X,y=Y, label = Name_Desc),
+            color = "darkblue",fontface = "italic", size = 3, check_overlap = FALSE)+
+  annotation_scale(location = "bl",width_hint = 0.5,height=unit(0.15, "cm"))+
+  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0.25, "in"), pad_y = unit(0.25, "in"), style = north_arrow_fancy_orienteering)
+```

@@ -15,6 +15,12 @@ library("zoo")
 theme(theme_bw())
 
 #Bringing in data
+sms <-readNWISuv(siteNumbers = "08170000", 
+                 parameterCd = "00060") 
+cs <-readNWISuv(siteNumbers = "08168710", 
+                parameterCd = "00060") 
+df<-bind_rows(sms,cs)|> renameNWISColumns(df)
+
 gages<- df|> 
   mutate( gage_name = case_when(
     site_no=="08170000"~"San Marcos Springs", 

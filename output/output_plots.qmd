@@ -6,13 +6,14 @@ execute:
   output: true
   echo: false
 ---
-```{r include: false}
+
+```{r}
 library("tidyverse")
 library("ggplot2")
 library("sf")
 library("prismatic")
 library("zoo")
-theme(theme_bw())
+library("dataRetrieval")
 
 #Bringing in data
 sms <-readNWISuv(siteNumbers = "08170000", 
@@ -61,8 +62,12 @@ stream_sucralose <- sucralose_no_dup_blank|>
 ```
 
 ### Springflow plots
+
 Showing average springflow (cfs) over 4 time periods by gage
+
 ```{r}
+theme(theme_bw())
+
 avg <- gages|>
   group_by(gage_name)|>
   add_column(
@@ -161,7 +166,9 @@ cfs_plot_sms + geom_hline(yintercept = c(140,80), linetype = "dashed", color = c
 ```
 
 ### Sucralose plots
+
 How can I determine the avg and range of suc levels detected in the edwards?
+
 ```{r}
 suc_plot <- stream_sucralose|>
   ggplot()+
@@ -176,7 +183,8 @@ suc_plot <- stream_sucralose|>
 suc_plot
 ```
 
-Do suc levels vary with streamflow from previous days? 
+Do suc levels vary with streamflow from previous days?
+
 ```{r}
 plot1 <- stream_sucralose|>
 ggplot()+
@@ -218,6 +226,7 @@ plot2+plot1+plot3+plot4
 ```
 
 How have suc averages changed over time at each gage?
+
 ```{r}
 p1 <- stream_sucralose|>
 ggplot()+
@@ -244,7 +253,8 @@ p2 <- stream_sucralose|>
 p1+p2
 ```
 
-###Suc dataset analysis
+### Suc dataset analysis
+
 ```{r}
 #Bringing in data
 stream_sucralose <- sucralose_no_dup_blank|>
@@ -266,6 +276,7 @@ false_pos <- sucralose|>
 ```
 
 Do duplicate measurements match their original?
+
 ```{r}
 duplicates <- sucralose|>
   filter(gage_name %in% c("San Marcos Springs","Comal Springs"),
@@ -296,6 +307,7 @@ dup_plot
 ```
 
 Do DI blanks return the reporting detection limit?
+
 ```{r}
 blanks_plot <- false_pos|>
   ggplot()+
@@ -312,7 +324,7 @@ blanks_plot <- false_pos|>
 blanks_plot
 ```
 
-###Mapping plots
+### Mapping plots
 
 ```{r}
 library("sf")

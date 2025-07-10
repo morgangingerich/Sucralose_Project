@@ -8,6 +8,30 @@ execute:
 ---
 ```{r}
 #Bringing in data
+sms <-readNWISuv(siteNumbers = "08170000", 
+                 parameterCd = "00060") 
+cs <-readNWISuv(siteNumbers = "08168710", 
+                parameterCd = "00060") 
+df<-bind_rows(sms,cs)|> renameNWISColumns(df)
+
+gages<- df|> 
+  mutate( gage_name = case_when(
+    site_no=="08170000"~"San Marcos Springs", 
+    site_no=="08168710"~"Comal Springs"), 
+    dateTime = date(dateTime), 
+    year = year(dateTime), 
+    month = month(dateTime), 
+    day = day(dateTime))|> 
+  rename( cfs = Flow_Inst, Date = dateTime)
+
+gages <- gages|>
+  arrange(Date)|>
+  mutate(
+    avg_30_prior = rollmean(cfs,30,na.pad = TRUE, align = "right"),
+    avg_60_prior = rollmean(cfs,60,na.pad = TRUE, align = "right"),
+    avg_10_prior = rollmean(cfs,10,na.pad = TRUE, align = "right"))|>
+  select(site_no,gage_name,Date,year,month,day,cfs,avg_10_prior,avg_30_prior,avg_60_prior)
+
 stream_sucralose <- sucralose_no_dup_blank|>
   left_join(gages, join_by(Date,gage_name))|>
   select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)

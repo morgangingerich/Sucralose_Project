@@ -6,7 +6,35 @@ execute:
   output: true
   echo: false
 ---
+```{r}
+#Bringing in data
+gages<- df|> 
+  mutate( gage_name = case_when(
+    site_no=="08170000"~"San Marcos Springs", 
+    site_no=="08168710"~"Comal Springs"), 
+    dateTime = date(dateTime), 
+    year = year(dateTime), 
+    month = month(dateTime), 
+    day = day(dateTime))|> 
+  rename( cfs = Flow_Inst, Date = dateTime)
 
+stream_sucralose <- sucralose_no_dup_blank|>
+  left_join(gages, join_by(Date,gage_name))|>
+  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers)
+
+sucralose <- sucralose_raw|>
+  mutate(add_column(sucralose_raw,
+    gage_name = case_when(
+      str_detect(sys_sample_code, "CM") ~ "Comal Springs",
+      str_detect(sys_sample_code, "SM") ~ "San Marcos Springs")))|>
+  relocate("gage_name",.before="Date")
+
+sucralose_no_dup <- subset(sucralose,duplicate == "N")
+sucralose_no_dup_blank <- subset(sucralose, blank == "N")
+
+false_pos <- sucralose|>
+  filter(detect_flag == "Y"& blank == "Y")
+```
 ### Springflow plots
 ```{r}
 library("tidyverse")

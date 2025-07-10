@@ -6,6 +6,18 @@ execute:
   echo: false
   warning: false
 ---
+```{r}
+#Bringing in data
+gages<- df|> 
+  mutate( gage_name = case_when(
+    site_no=="08170000"~"San Marcos Springs", 
+    site_no=="08168710"~"Comal Springs"), 
+    dateTime = date(dateTime), 
+    year = year(dateTime), 
+    month = month(dateTime), 
+    day = day(dateTime))|> 
+  rename( cfs = Flow_Inst, Date = dateTime)
+```
 
 ```{r}
 #What days have flow higher than 300 cfs?

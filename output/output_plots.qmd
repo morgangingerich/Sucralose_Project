@@ -8,7 +8,13 @@ execute:
 ---
 
 ### Springflow plots
-
+```{r}
+library("tidyverse")
+library("ggplot2")
+library("sf")
+library("prismatic")
+theme(theme_bw())
+```
 Showing average springflow (cfs) over 4 time periods by gage
 
 ```{r}
@@ -70,7 +76,7 @@ mean_flow_gage_year <- gages |>
   ungroup()
 mean_flow_gage_year
 
-p5 <- ggplot(mean_flow_gage_year)+
+mean_flow_plot <- ggplot(mean_flow_gage_year)+
   geom_line(aes(year,mean_flow, color = gage_name))+
   geom_smooth(aes(year,mean_flow),
               color = "darkgrey",linetype = "dashed", se = FALSE)+
@@ -82,12 +88,14 @@ p5 <- ggplot(mean_flow_gage_year)+
   theme(legend.title = element_blank(),
         legend.position = "none")+
   facet_wrap(~gage_name)
+mean_flow_plot
 ```
 
 Showing daily flow by gage, with dotted lines representing flow goal min and max for each gage
 
 ```{r}
-cfs_plot_cs <- streams|>
+library("patchwork")
+cfs_plot_cs <- gages|>
   filter(gage_name =="Comal Springs")|>
   ggplot()+
   geom_line(aes(x = Date, y = cfs), color = "salmon", lwd = 0.75)+
@@ -95,7 +103,7 @@ cfs_plot_cs <- streams|>
   theme(legend.position = "none",
         axis.title.x = element_blank())
 
-cfs_plot_sms <- streams|>
+cfs_plot_sms <- gages|>
   filter(gage_name =="San Marcos Springs")|>
   ggplot()+
   geom_line(aes(x = Date, y = cfs), color = "turquoise", lwd = 0.75)+
@@ -120,6 +128,7 @@ suc_plot <- stream_sucralose|>
     x = "Gage",
     y = "Sucralose (ng/L)")+
   theme(legend.position = "none")
+suc_plot
 ```
 
 Do suc levels vary with streamflow from previous days? 
@@ -218,6 +227,7 @@ dup_plot <- duplicates|>
     y = "Sucralose (ng/L)",
     caption = "*cross represents the average for each original/duplicate pair")+
   theme(legend.title = element_blank())
+dup_plot
 ```
 
 Do DI blanks return the reporting detection limit?
@@ -234,6 +244,7 @@ blanks_plot <- false_pos|>
     caption = "*cross represents the reporting detection limit")+
   theme(legend.title = element_blank())+
   theme(legend.position = "bottom")
+blanks_plot
 ```
 
 ###Mapping plots

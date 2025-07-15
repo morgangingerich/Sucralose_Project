@@ -8,9 +8,9 @@ execute:
 ---
 ```{r}
 #Bringing in data
-sms <-readNWISuv(siteNumbers = "08170000", 
+sms <-readNWISdv(siteNumbers = "08170000", 
                  parameterCd = "00060") 
-cs <-readNWISuv(siteNumbers = "08168710", 
+cs <-readNWISdv(siteNumbers = "08168710", 
                 parameterCd = "00060") 
 df<-bind_rows(sms,cs)|> renameNWISColumns(df)
 
@@ -18,11 +18,10 @@ gages<- df|>
   mutate( gage_name = case_when(
     site_no=="08170000"~"San Marcos Springs", 
     site_no=="08168710"~"Comal Springs"), 
-    dateTime = date(dateTime), 
-    year = year(dateTime), 
-    month = month(dateTime), 
-    day = day(dateTime))|> 
-  rename( cfs = Flow_Inst, Date = dateTime)
+    year = year(Date), 
+    month = month(Date), 
+    day = day(Date))|> 
+  rename(cfs = Flow)
 
 gages <- gages|>
   arrange(Date)|>
@@ -32,9 +31,8 @@ gages <- gages|>
     avg_10_prior = rollmean(cfs,10,na.pad = TRUE, align = "right"))|>
   select(site_no,gage_name,Date,year,month,day,cfs,avg_10_prior,avg_30_prior,avg_60_prior)
 
-stream_sucralose <- sucralose_no_dup_blank|>
-  left_join(gages, join_by(Date,gage_name))|>
-  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
+(sucralose_raw <- readr::read_csv("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/data/sucralose_simplified.csv", col_types = cols(
+  Date = col_date("%m.%d.%Y"),)))
 
 sucralose <- sucralose_raw|>
   mutate(add_column(sucralose_raw,
@@ -45,9 +43,12 @@ sucralose <- sucralose_raw|>
 
 sucralose_no_dup <- subset(sucralose,duplicate == "N")
 sucralose_no_dup_blank <- subset(sucralose, blank == "N")
-
 false_pos <- sucralose|>
   filter(detect_flag == "Y"& blank == "Y")
+
+stream_sucralose <- sucralose|>
+  left_join(gages, join_by(Date,gage_name))|>
+  select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
 ```
 How does avg sucralose vary throughout the months at each gage?
 ```{r}

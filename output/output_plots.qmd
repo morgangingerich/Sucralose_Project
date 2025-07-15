@@ -16,9 +16,9 @@ library("zoo")
 library("dataRetrieval")
 
 #Bringing in data
-sms <-readNWISuv(siteNumbers = "08170000", 
+sms <-readNWISdv(siteNumbers = "08170000", 
                  parameterCd = "00060") 
-cs <-readNWISuv(siteNumbers = "08168710", 
+cs <-readNWISdv(siteNumbers = "08168710", 
                 parameterCd = "00060") 
 df<-bind_rows(sms,cs)|> renameNWISColumns(df)
 
@@ -26,11 +26,10 @@ gages<- df|>
   mutate( gage_name = case_when(
     site_no=="08170000"~"San Marcos Springs", 
     site_no=="08168710"~"Comal Springs"), 
-    dateTime = date(dateTime), 
-    year = year(dateTime), 
-    month = month(dateTime), 
-    day = day(dateTime))|> 
-  rename( cfs = Flow_Inst, Date = dateTime)
+    year = year(Date), 
+    month = month(Date), 
+    day = day(Date))|> 
+  rename(cfs = Flow)
 
 gages <- gages|>
   arrange(Date)|>
@@ -55,7 +54,7 @@ sucralose_no_dup_blank <- subset(sucralose, blank == "N")
 false_pos <- sucralose|>
   filter(detect_flag == "Y"& blank == "Y")
 
-stream_sucralose <- sucralose_no_dup_blank|>
+stream_sucralose <- sucralose|>
   left_join(gages, join_by(Date,gage_name))|>
   select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
 
@@ -88,18 +87,12 @@ avg_5yr <- gages|>
     label = "avg_5yr")|>
   ungroup()
 
-avg_24 <- gages|>
-  group_by(gage_name, year)|>
-  filter(year == "2024")|>
-  add_column(
-    label = "avg_24")|>
-  ungroup()
 
-avgs <- bind_rows(avg_24,avg_25,avg_5yr,avg)|>
+avgs <- bind_rows(avg_25,avg_5yr,avg)|>
   select(gage_name,cfs,label)
 
 avgs$label <- factor(avgs$label,
-                    levels = c("avg_24","avg_25","avg_5yr","avg"))
+                    levels = c( "avg_25","avg_5yr","avg"))
 
 ggplot(avgs, aes(gage_name,cfs, color = label))+
   geom_boxplot(aes(gage_name,cfs, color = label, fill = after_scale(clr_desaturate(clr_lighten(color,.8),.8))),linewidth = 0.65)+
@@ -111,7 +104,7 @@ ggplot(avgs, aes(gage_name,cfs, color = label))+
     y = "Springflow (cfs)",
     x = "")+
   scale_color_discrete(name = element_blank(),
-                       labels = c("2024","2025","5-year","Long-term"))+
+                       labels = c("2025","5-year","Long-term"))+
   theme(legend.title = element_blank(),
         legend.position = "top",
         axis.title.y = element_text(margin = margin(r = 10)))
@@ -145,6 +138,7 @@ Showing daily flow by gage, with dotted lines representing flow goal min and max
 
 ```{r}
 library("patchwork")
+theme(theme_bw())
 cfs_plot_cs <- gages|>
   filter(gage_name =="Comal Springs")|>
   ggplot()+
@@ -170,6 +164,7 @@ cfs_plot_sms + geom_hline(yintercept = c(140,80), linetype = "dashed", color = c
 How can I determine the avg and range of suc levels detected in the edwards?
 
 ```{r}
+theme(theme_bw())
 suc_plot <- stream_sucralose|>
   ggplot()+
   geom_boxplot(aes(gage_name,result_value, color = gage_name, 
@@ -186,6 +181,7 @@ suc_plot
 Do suc levels vary with streamflow from previous days?
 
 ```{r}
+theme(theme_bw())
 plot1 <- stream_sucralose|>
   filter(detect_flag == "Y")|> #removing non-detects
 ggplot()+
@@ -232,6 +228,7 @@ plot2+plot1+plot3+plot4
 How have suc averages changed over time at each gage?
 
 ```{r}
+theme(theme_bw())
 p1 <- stream_sucralose|>
 ggplot()+
   geom_point(aes(Date,result_value, color = gage_name), na.rm = TRUE)+

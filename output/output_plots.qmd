@@ -85,11 +85,19 @@ avg_5yr <- gages|>
     label = "avg_5yr")|>
   ungroup()
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 44d3404389b45153ec4ed15cadd59902f935ee29
 avgs <- bind_rows(avg_25,avg_5yr,avg)|>
   select(gage_name,cfs,label)
 
 avgs$label <- factor(avgs$label,
+<<<<<<< HEAD
                     levels = c("avg_25","avg_5yr","avg")) 
+=======
+                    levels = c( "avg_25","avg_5yr","avg"))
+>>>>>>> 44d3404389b45153ec4ed15cadd59902f935ee29
 
 ggplot(avgs, aes(gage_name,cfs, color = label))+
   geom_boxplot(aes(gage_name,cfs, color = label, fill = after_scale(clr_desaturate(clr_lighten(color,.8),.8))),linewidth = 0.65)+

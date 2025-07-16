@@ -6,6 +6,12 @@ format: html
 Reading in sucralose data and adjusting columns
 
 ```{r}
+library("tidyverse")
+library("ggplot2")
+library("sf")
+library("prismatic")
+library("zoo")
+library("dataRetrieval")
 (sucralose_raw <- readr::read_csv("sucralose_simplified.csv", col_types = cols(
   Date = col_date("%m.%d.%Y"),)))
 ```

@@ -78,26 +78,19 @@ avg_25 <- gages|>
     label = "avg_25")|>
   ungroup()
 
-avg_5yr <- gages|>
+avg_3yr <- gages|>
   group_by(gage_name,year)|>
-  filter(year %in% c("2025","2024","2023","2022","2021","2020"))|>
+  filter(year %in% c("2025","2024","2023"))|>
   add_column(
-    label = "avg_5yr")|>
+    label = "avg_3yr")|>
   ungroup()
 
-<<<<<<< HEAD
-=======
 
->>>>>>> 44d3404389b45153ec4ed15cadd59902f935ee29
-avgs <- bind_rows(avg_25,avg_5yr,avg)|>
+avgs <- bind_rows(avg_25,avg_3yr,avg)|>
   select(gage_name,cfs,label)
 
 avgs$label <- factor(avgs$label,
-<<<<<<< HEAD
-                    levels = c("avg_25","avg_5yr","avg")) 
-=======
-                    levels = c( "avg_25","avg_5yr","avg"))
->>>>>>> 44d3404389b45153ec4ed15cadd59902f935ee29
+                     levels = c("avg_25","avg_3yr","avg")) 
 
 ggplot(avgs, aes(gage_name,cfs, color = label))+
   geom_boxplot(aes(gage_name,cfs, color = label, fill = after_scale(clr_desaturate(clr_lighten(color,.8),.8))),linewidth = 0.65)+
@@ -109,7 +102,7 @@ ggplot(avgs, aes(gage_name,cfs, color = label))+
     y = "Springflow (cfs)",
     x = "")+
   scale_color_discrete(name = element_blank(),
-                       labels = c("2025","5-year","Long-term"))+
+                       labels = c("2025","3-year","Long-term"))+
   theme(legend.title = element_blank(),
         legend.position = "top",
         axis.title.y = element_text(margin = margin(r = 10)))
@@ -145,6 +138,7 @@ Showing daily flow by gage, with dotted lines representing flow goal min and max
 ```{r}
 library("patchwork")
 theme(theme_bw())
+
 cfs_plot_cs <- gages|>
   filter(gage_name =="Comal Springs")|>
   ggplot()+
@@ -165,6 +159,22 @@ cfs_plot_cs + geom_hline(yintercept = c(225,30), linetype = "dashed", color = c(
 cfs_plot_sms + geom_hline(yintercept = c(140,80), linetype = "dashed", color = c("springgreen3", 'red'))+ plot_annotation('Daily Flow by Gage', caption = 'Source: USGS',theme=theme(plot.title=element_text(hjust=0.5))) #adding dashed lines that represent the flow goals for the respective spring
 ```
 
+```{r}
+#summary table for springflow
+library("gt")
+
+spring_stats|>
+  rename(
+    "Gage" = gage_name,
+    "Mean (cfs)" = mean_cfs,
+    "Standard Deviation (cfs)"= stdv_cfs,
+    "Min (cfs)" = min_cfs,
+    "Max (cfs)" = max_cfs,
+    "Median (cfs)" = median_cfs)|>
+  gt()
+#gtsave("spring_stats.html")
+
+```
 ### Sucralose plots
 
 How can I determine the avg and range of suc levels detected in the edwards?
@@ -259,6 +269,29 @@ p2 <- stream_sucralose|>
 
 p1+p2
 ```
+
+
+```{r}
+#summary statistics tables for results section
+#install.packages("gt")
+library("gt")
+
+suc_summary_stats|>
+  rename(
+    "Gage" = gage_name,
+    "n Total" = n_tot,
+    "Mean (ng/L)" = mean_suc,
+    "Min (ng/L)" = min_suc,
+    "Max (ng/L)" = max_suc,
+    "Median (ng/L)" = median_suc,
+    "Mean Detection Limit (ng/L)" = mean_detect,
+    "n SUC Detected" = num_detect,
+    "%n SUC Detected" = perc_detect,
+    "%n SUC non-Detect" = perc_non)|>
+  gt()|>
+gtsave("suc_summary_stats.html")
+```
+
 
 ### Suc dataset analysis
 

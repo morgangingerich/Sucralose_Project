@@ -7,6 +7,14 @@ execute:
   echo: true
 ---
 ```{r}
+#loading required packages
+library("tidyverse")
+library("ggplot2")
+library("sf")
+library("prismatic")
+library("zoo")
+library("dataRetrieval")
+
 #Bringing in data
 sms <-readNWISdv(siteNumbers = "08170000", 
                  parameterCd = "00060") 
@@ -134,3 +142,25 @@ load|>
   geom_point(aes(Date,load, color = gage_name))
 ```
 
+```{r}
+#table summary information for sucralose data
+detect_stats <- sucralose|>
+  group_by(gage_name)|>
+  filter(detect_flag == "Y")|>
+  summarise(mean_suc = mean(result_value),
+            min_suc = min(result_value),
+            max_suc = max(result_value),
+            median_suc = median(result_value),
+            mean_detect = mean(reporting_detection_limit),
+            num_detect = n())|>
+  ungroup()
+
+suc_summary_stats <- sucralose|>
+  group_by(gage_name)|>
+  summarise(n_tot = n())|>
+  ungroup()|>
+left_join(sum_stat, join_by(gage_name))|>
+  mutate(
+    perc_detect = num_detect/n_tot*100,
+    perc_non = 100-perc_detect)
+```

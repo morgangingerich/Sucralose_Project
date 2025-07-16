@@ -49,10 +49,6 @@ false_pos <- sucralose|>
 stream_sucralose <- sucralose|>
   left_join(gages, join_by(Date,gage_name))|>
   select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
-<<<<<<< HEAD
-=======
-
->>>>>>> 44d3404389b45153ec4ed15cadd59902f935ee29
 ```
 
 ```{r}
@@ -92,5 +88,16 @@ peak_monthday_flows <-gages|>
   group_by(gage_name)|>
   arrange(desc(median_flow))|>
   slice(1:1)|>
+  ungroup()
+```
+
+```{r}
+spring_stats <- gages|>
+  group_by(gage_name)|>
+  summarise(mean_cfs = mean(cfs),
+            stdv_cfs = sd(cfs),
+            min_cfs = min(cfs),
+            max_cfs = max(cfs),
+            median_cfs = median(cfs))|>
   ungroup()
 ```

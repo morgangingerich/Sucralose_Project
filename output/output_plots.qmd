@@ -132,7 +132,22 @@ mean_flow_plot <- ggplot(mean_flow_gage_year)+
   facet_wrap(~gage_name)
 mean_flow_plot
 ```
+```{r}
+theme_set(theme_bw())
 
+springflow_plot <- gages|>
+  ggplot()+
+  geom_line(aes(x = Date, y = cfs, color = gage_name), linewidth = 1)+
+  labs(
+    title = "",
+    x = "Date",
+    y = "Springflow (cfs)")+
+  theme(
+    legend.title = element_blank(),
+    legend.position = "bottom")
+springflow_plot
+ggsave("springflow_plot.png")
+```
 Showing daily flow by gage, with dotted lines representing flow goal min and max for each gage
 
 ```{r}
@@ -197,6 +212,7 @@ suc_plot
 Do suc levels vary with streamflow from previous days?
 
 ```{r}
+library("patchwork")
 theme(theme_bw())
 plot1 <- stream_sucralose|>
   filter(detect_flag == "Y")|> #removing non-detects
@@ -239,6 +255,7 @@ plot4 <- stream_sucralose|>
     y = "Sucralose (ng/L)")
 
 plot2+plot1+plot3+plot4
+#ggsave("suc_flow.png")
 ```
 
 How have suc averages changed over time at each gage?
@@ -274,9 +291,11 @@ p1+p2
 ```{r}
 #summary statistics tables for results section
 #install.packages("gt")
+#install.packages("janitor")
+#library("janitor")
 library("gt")
 
-suc_summary_stats|>
+suc_stats_wide <- suc_summary_stats|>
   rename(
     "Gage" = gage_name,
     "n Total" = n_tot,
@@ -284,12 +303,14 @@ suc_summary_stats|>
     "Min (ng/L)" = min_suc,
     "Max (ng/L)" = max_suc,
     "Median (ng/L)" = median_suc,
-    "Mean Detection Limit (ng/L)" = mean_detect,
     "n SUC Detected" = num_detect,
-    "%n SUC Detected" = perc_detect,
-    "%n SUC non-Detect" = perc_non)|>
-  gt()|>
-gtsave("suc_summary_stats.html")
+    "Mean of Detected (ng/L)" = mean_detect,
+    "% Detects" = perc_detect,
+    "% non-Detects" = perc_non)
+
+#transposing into a long table with 1st row as column names
+suc_stats_long <- t(suc_stats_wide)|>
+    row_to_names(row_number = 1)
 ```
 
 

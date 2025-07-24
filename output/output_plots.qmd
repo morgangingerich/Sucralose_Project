@@ -138,6 +138,7 @@ theme_set(theme_bw())
 springflow_plot <- gages|>
   ggplot()+
   geom_line(aes(x = Date, y = cfs, color = gage_name), linewidth = 1)+
+  scale_color_brewer(palette = "Paired")+
   labs(
     title = "",
     x = "Date",
@@ -145,8 +146,15 @@ springflow_plot <- gages|>
   theme(
     legend.title = element_blank(),
     legend.position = "bottom")
-springflow_plot
-ggsave("springflow_plot.png")
+
+springflow_plot +inset_element(
+  cfs_plot,
+  left = 0.65,
+  bottom = 0.55,
+  right = unit(1, 'npc')-unit(1.55, 'cm'),
+  top = unit(1, 'npc')-unit(0.02, 'cm')
+)
+ggsave("springflow_plot_blue_insetboxplot.png")
 ```
 Showing daily flow by gage, with dotted lines representing flow goal min and max for each gage
 
@@ -190,25 +198,28 @@ spring_stats|>
 #gtsave("spring_stats.html")
 
 ```
-### Sucralose plots
 
 How can I determine the avg and range of suc levels detected in the edwards?
 
 ```{r}
 theme(theme_bw())
-suc_plot <- stream_sucralose|>
+cfs_plot <- gages|>
   ggplot()+
-  geom_boxplot(aes(gage_name,result_value, color = gage_name, 
+  geom_boxplot(aes(gage_name,cfs, color = gage_name, 
                    fill = after_scale(clr_desaturate(
-                     clr_lighten(color,.8),.8))),linewidth = 0.65)+
+                     clr_lighten(color,.8),.8))),linewidth = 0.5, outlier.alpha = 0)+
+  scale_color_brewer(palette = "Paired")+
   labs(
-    title = "Sucralose Levels by Gage",
-    x = "Gage",
-    y = "Sucralose (ng/L)")+
-  theme(legend.position = "none")
-suc_plot
+    title = "",
+    x = "",
+    y = "")+
+  theme(legend.position = "none",
+        axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        plot.margin = unit(c(0.01,0.01,0,0.01), "cm")) #top, right, bottom, left
+cfs_plot
 ```
-
+### Sucralose plots
 Do suc levels vary with streamflow from previous days?
 
 ```{r}
@@ -218,6 +229,7 @@ plot1 <- stream_sucralose|>
   filter(detect_flag == "Y")|> #removing non-detects
 ggplot()+
   geom_point(aes(avg_30_prior,result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
+  scale_color_brewer(palette = "Paired")+
   theme(legend.position = "none",)+
   labs(
     x = "30-day Prior Avg Flow (cfs)",
@@ -227,6 +239,7 @@ plot2 <- stream_sucralose|>
   filter(detect_flag == "Y")|>
   ggplot()+
   geom_point(aes(avg_10_prior, result_value, color = gage_name,shape = gage_name),na.rm = TRUE)+
+  scale_color_brewer(palette = "Paired")+
   theme(legend.position = "none")+
   labs(
   title = "Sucralose Levels by Flow",
@@ -238,6 +251,7 @@ plot3 <- stream_sucralose|>
   filter(detect_flag == "Y")|>
   ggplot()+
   geom_point(aes(avg_60_prior, result_value, color = gage_name,shape=gage_name), na.rm = TRUE)+
+  scale_color_brewer(palette = "Paired")+
   theme(legend.position = "bottom",
         legend.margin = margin(l=220),
         legend.title = element_blank())+
@@ -249,13 +263,16 @@ plot4 <- stream_sucralose|>
   filter(detect_flag == "Y")|>
   ggplot()+
   geom_point(aes(cfs,result_value,color=gage_name,shape=gage_name),na.rm=TRUE)+
+  scale_color_brewer(palette = "Paired")+
   theme(legend.position = "none")+
   labs(
     x = "Day-of Flow (cfs)",
     y = "Sucralose (ng/L)")
 
-plot2+plot1+plot3+plot4
-#ggsave("suc_flow.png")
+
+plot2+plot1+plot3+plot4+
+  plot_layout(design = layout)
+#ggsave("suc_flow_blue.png")
 ```
 
 How have suc averages changed over time at each gage?
@@ -292,7 +309,7 @@ p1+p2
 #summary statistics tables for results section
 #install.packages("gt")
 #install.packages("janitor")
-#library("janitor")
+library("janitor")
 library("gt")
 
 suc_stats_wide <- suc_summary_stats|>
@@ -311,6 +328,10 @@ suc_stats_wide <- suc_summary_stats|>
 #transposing into a long table with 1st row as column names
 suc_stats_long <- t(suc_stats_wide)|>
     row_to_names(row_number = 1)
+
+tab2 <- gt(suc_stats_wide)
+tab2
+gtsave(tab2, filename = "suc_table_wide.png")
 ```
 
 

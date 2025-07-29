@@ -243,7 +243,6 @@ plot2 <- stream_sucralose|>
   theme(legend.position = "none")+
   labs(
   title = "Sucralose Levels by Flow",
-    subtitle = "Comal and San Marcos Springs",
   x = "10-day Prior Avg Flow (cfs)",
   y = "Sucralose (ng/L)")
 
@@ -272,7 +271,7 @@ plot4 <- stream_sucralose|>
 
 plot2+plot1+plot3+plot4+
   plot_layout(design = layout)
-#ggsave("suc_flow_blue.png")
+ggsave("suc_flow_blue.png")
 ```
 
 How have suc averages changed over time at each gage?
@@ -316,22 +315,18 @@ suc_stats_wide <- suc_summary_stats|>
   rename(
     "Gage" = gage_name,
     "n Total" = n_tot,
+    "n SUC Detected" = num_detect,
     "Mean (ng/L)" = mean_suc,
     "Min (ng/L)" = min_suc,
     "Max (ng/L)" = max_suc,
     "Median (ng/L)" = median_suc,
-    "n SUC Detected" = num_detect,
-    "Mean of Detected (ng/L)" = mean_detect,
-    "% Detects" = perc_detect,
-    "% non-Detects" = perc_non)
+    "Mean Detection Limit (ng/L)" = mean_detect)|>
+  select("Gage","n Total", "n SUC Detected","Mean (ng/L)","Min (ng/L)","Max (ng/L)", "Median (ng/L)","Mean Detection Limit (ng/L)")
 
-#transposing into a long table with 1st row as column names
-suc_stats_long <- t(suc_stats_wide)|>
-    row_to_names(row_number = 1)
-
-tab2 <- gt(suc_stats_wide)
+tab2 <- gt(suc_stats_wide)|>
+  fmt_number(decimals = 2)
 tab2
-gtsave(tab2, filename = "suc_table_wide.png")
+#gtsave(tab2, filename = "suc_summary_table.png")
 ```
 
 
@@ -387,25 +382,32 @@ blanks_plot <- false_pos|>
   theme(legend.position = "bottom")
 blanks_plot
 ```
-
-### Mapping plots
-
 ```{r}
-library("sf")
-library("ggplot2")
-library("ggspatial")
-shape_points <- cbind(shape,st_coordinates(st_centroid(shape$geometry)))
-shape <- read_sf("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/gis/usgs_basins.shp")
+data <- data.frame(
+  x = c("Comal Springs","San Marcos Springs","WW influence", "Recreational influence","WW Effluent"),
+  y = c(9.65,16.0,680,76.5,2400))
+
+data$x <- factor(data$x, levels = c("Comal Springs","San Marcos Springs","Recreational influence","WW influence","WW Effluent"))
+                 
 theme_set(theme_bw())
-ggplot(shape)+
-  geom_sf()+
-  labs(
-    title = "USGS Recharge Basins",
-    x = "Longitude",
-    y = "Latitude"
-  )+
-  geom_text(data = shape_points,aes(x=X,y=Y, label = Name_Desc),
-            color = "darkblue",fontface = "italic", size = 3, check_overlap = FALSE)+
-  annotation_scale(location = "bl",width_hint = 0.5,height=unit(0.15, "cm"))+
-  annotation_north_arrow(location = "bl", which_north = "true", pad_x = unit(0.25, "in"), pad_y = unit(0.25, "in"), style = north_arrow_fancy_orienteering)
+
+comp_plot <- ggplot()+
+  geom_col(aes(x=data$x, y=y, fill = data$x))+
+  geom_label(position = position_nudge(y = 100), aes(x=data$x,y=y,label = y), size = 3.25, label.size = 0)+
+  labs(x = "",
+       y = "Median SUC (ng/L)",
+       title = "Sucralose Concentrations with Varying Contamination")+
+  scale_fill_manual(
+    values = c("Comal Springs" = "darkslateblue", 
+               "San Marcos Springs" = "cornflowerblue",
+               "Recreational influence" = "darkslategray2",
+               "WW influence" = "darkturquoise",
+               "WW Effluent" = "darkcyan"))+
+  theme(axis.text.x = element_blank(),
+        legend.title = element_blank(),
+        axis.title.y = element_text(vjust = 1),
+        legend.position = "bottom")
+
+comp_plot
+ggsave(filename = "SUC_comparison_plot_titled.png")
 ```

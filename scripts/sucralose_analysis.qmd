@@ -164,14 +164,3 @@ left_join(sum_stat, join_by(gage_name))|>
     perc_detect = num_detect/n_tot*100,
     perc_non = 100-perc_detect)
 ```
-
-###Literature Review SUC analysis
-```{r}
-mawhinney_suc <- readr::read_csv("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/data/Mawhinney_SUC_data.csv")
-mawhinney_suc|>
-  filter(influence == "ww")
-```
-
-```{r}
-
-```

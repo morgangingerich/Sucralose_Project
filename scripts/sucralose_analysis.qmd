@@ -76,6 +76,7 @@ sucralose_plot <- sucralose|>
   scale_color_discrete(
     name = "Gage",
     labels = c("Comal River Spring Run 3", "San Marcos Springs Hotel Site"))
+sucralose_plot
 ```
 How do average sucralose levels compare between gages?
 ```{r}
@@ -146,13 +147,15 @@ load|>
 #table summary information for sucralose data
 detect_stats <- sucralose|>
   group_by(gage_name)|>
-  filter(detect_flag == "Y")|>
+  filter(detect_flag == "Y",
+         result_value < 100)|>
   summarise(mean_suc = mean(result_value),
             min_suc = min(result_value),
             max_suc = max(result_value),
             median_suc = median(result_value),
             mean_detect = mean(reporting_detection_limit),
-            num_detect = n())|>
+            num_detect = n(),
+            st_dev = sd(result_value))|>
   ungroup()
 
 suc_summary_stats <- sucralose|>
@@ -163,4 +166,41 @@ left_join(sum_stat, join_by(gage_name))|>
   mutate(
     perc_detect = num_detect/n_tot*100,
     perc_non = 100-perc_detect)
+```
+
+Analyzing the correlation between springflow and sucralose
+```{r}
+ndhalf_stream_sucralose<-stream_sucralose|>
+  filter(gage_name == "Comal Springs")|>
+  mutate(half_ND = case_when(
+    detect_flag == "N" ~ result_value/2,
+    detect_flag == "Y" ~ result_value/1))
+
+result <- cor.test(ndhalf_stream_sucralose$cfs,ndhalf_stream_sucralose$half_ND, use = "pairwise.complete.obs")
+#Extract values
+r <- result$estimate
+t <- result$statistic
+p <- result$p.value
+
+#Print
+r
+t
+p
+```
+
+```{r}
+rm_stream_sucralose<-stream_sucralose|>
+  filter(gage_name == "San Marcos Springs",
+         detect_flag == "Y")
+
+result <- cor.test(rm_stream_sucralose$cfs,rm_stream_sucralose$result_value, use = "pairwise.complete.obs")
+#Extract values
+r <- result$estimate
+t <- result$statistic
+p <- result$p.value
+
+#Print
+r
+t
+p
 ```

@@ -7,6 +7,13 @@ execute:
   warning: false
 ---
 ```{r}
+library("tidyverse")
+library("ggplot2")
+library("sf")
+library("prismatic")
+library("zoo")
+library("dataRetrieval")
+
 #Bringing in data
 sms <-readNWISdv(siteNumbers = "08170000", 
                  parameterCd = "00060") 

@@ -8,12 +8,14 @@ execute:
 ---
 
 ```{r}
+#packages used
 library("tidyverse")
 library("ggplot2")
 library("sf")
 library("prismatic")
 library("zoo")
 library("dataRetrieval")
+library("patchwork")
 
 #Bringing in data
 sms <-readNWISdv(siteNumbers = "08170000", 
@@ -59,11 +61,12 @@ stream_sucralose <- sucralose|>
   select(Date,gage_name,cfs,avg_10_prior,avg_30_prior,avg_60_prior,result_value,lab_qualifiers,detect_flag)
 ```
 
+
 ### Springflow plots
-
-Showing average springflow (cfs) over 4 time periods by gage
-
 ```{r}
+#Showing average springflow (cfs) over 4 time periods by gage
+#note: not used in final poster
+
 theme(theme_bw())
 avg <- gages|>
   group_by(gage_name)|>
@@ -108,9 +111,10 @@ ggplot(avgs, aes(gage_name,cfs, color = label))+
         axis.title.y = element_text(margin = margin(r = 10)))
 ```
 
-Showing average flow for each year with cfs data for comal and sm
-
 ```{r}
+#Showing average flow for each year with cfs data for comal and sm
+#note: not used in final poster
+
 theme(theme_bw())
 mean_flow_gage_year <- gages |>
   group_by(gage_name,year)|>
@@ -132,33 +136,48 @@ mean_flow_plot <- ggplot(mean_flow_gage_year)+
   facet_wrap(~gage_name)
 mean_flow_plot
 ```
+
 ```{r}
-theme_set(theme_bw())
+comal <- read_csv("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/data/comal.csv")|>
+    rename(
+    cfs = val,
+    gage_name = site)|>
+   filter(gage_name == c("Comal", "San Marcos"))|>
+  group_by(gage_name)
 
-springflow_plot <- gages|>
-  ggplot()+
-  geom_line(aes(x = Date, y = cfs, color = gage_name), linewidth = 1)+
-  scale_color_brewer(palette = "Paired")+
-  labs(
-    title = "",
-    x = "Date",
-    y = "Springflow (cfs)")+
-  theme(
-    legend.title = element_blank(),
-    legend.position = "bottom")
+sm <- read_csv("C:/Users/mgingerich/OneDrive - Edwards Aquifer Authority/Desktop/Sucralose_Project/data/sm.csv")|>
+  rename(
+    cfs = val,
+    gage_name = site)|>
+  filter(gage_name == c("Comal", "San Marcos"))|>
+  group_by(gage_name)
 
-springflow_plot +inset_element(
+hydrograph <-  ggplot()+
+    geom_line(data = sm,aes(x = date, y = cfs, color = gage_name), linewidth = 1, na.rm = TRUE)+
+    geom_line(data = comal,aes(x = date, y = cfs, color = gage_name), linewidth = 1, na.rm = TRUE)+
+    scale_color_brewer(palette = "Paired")+
+    labs(
+       title = "",
+       x = "Date",
+       y = "Springflow (cfs)")+
+    theme(
+      legend.title = element_blank(),
+      legend.position = "bottom")
+
+hydrograph +inset_element(
   cfs_plot,
   left = 0.65,
   bottom = 0.55,
-  right = unit(1, 'npc')-unit(1.55, 'cm'),
-  top = unit(1, 'npc')-unit(0.02, 'cm')
-)
-ggsave("springflow_plot_blue_insetboxplot.png")
+  right = unit(1, 'npc')-unit(1.05, 'cm'),
+  top = unit(1, 'npc')-unit(0.02, 'cm'))
+ggsave("hydrograph_insetboxplot.png")
 ```
-Showing daily flow by gage, with dotted lines representing flow goal min and max for each gage
+
 
 ```{r}
+#Showing daily flow by gage, with dotted lines representing flow goal min and max for each gage
+#note: not use in final poster
+
 library("patchwork")
 theme(theme_bw())
 
@@ -199,11 +218,12 @@ spring_stats|>
 
 ```
 
-How can I determine the avg and range of suc levels detected in the edwards?
-
 ```{r}
+#determining the average flow for each gage
+#used as inset plot in hydrograph
+
 theme(theme_bw())
-cfs_plot <- gages|>
+cfs_plot <- flow_data|>
   ggplot()+
   geom_boxplot(aes(gage_name,cfs, color = gage_name, 
                    fill = after_scale(clr_desaturate(
@@ -218,11 +238,53 @@ cfs_plot <- gages|>
         axis.ticks.x = element_blank(),
         plot.margin = unit(c(0.01,0.01,0,0.01), "cm")) #top, right, bottom, left
 cfs_plot
+
+#statistics
+flow_data|>
+  group_by(gage_name)|>
+  mutate(
+    avg = mean(cfs),
+    med = median(cfs))
 ```
-### Sucralose plots
-Do suc levels vary with streamflow from previous days?
 
 ```{r}
+#hydrograph for results section
+
+data <- data.frame(
+  x = c("Comal Springs","San Marcos Springs","WW influence", "Recreational influence","WW Effluent"),
+  y = c(9.65,16.0,680,76.5,2400))
+
+data$x <- factor(data$x, levels = c("Comal Springs","San Marcos Springs","Recreational influence","WW influence","WW Effluent"))
+                 
+theme_set(theme_bw())
+
+comp_plot <- ggplot()+
+  geom_col(aes(x=data$x, y=y, fill = data$x))+
+  geom_label(position = position_nudge(y = 100), aes(x=data$x,y=y,label = y), size = 3.25, label.size = 0)+
+  labs(x = "",
+       y = "Median SUC (ng/L)",
+       title = "Sucralose Concentrations with Varying Contamination")+
+  scale_fill_manual(
+    values = c("Comal Springs" = "darkslateblue", 
+               "San Marcos Springs" = "cornflowerblue",
+               "Recreational influence" = "darkslategray2",
+               "WW influence" = "darkturquoise",
+               "WW Effluent" = "darkcyan"))+
+  theme(axis.text.x = element_blank(),
+        legend.title = element_blank(),
+        axis.title.y = element_text(vjust = 1),
+        legend.position = "bottom")
+
+comp_plot
+#ggsave(filename = "SUC_comparison_plot_titled.png")
+```
+
+
+
+### Sucralose plots
+```{r}
+#Do suc levels vary with streamflow from previous days?
+
 library("patchwork")
 theme(theme_bw())
 plot1 <- stream_sucralose|>
@@ -274,9 +336,10 @@ plot2+plot1+plot3+plot4+
 ggsave("suc_flow_blue.png")
 ```
 
-How have suc averages changed over time at each gage?
-
 ```{r}
+#How have suc averages changed over time at each gage?
+#note: not used in final poster
+
 theme(theme_bw())
 p1 <- stream_sucralose|>
 ggplot()+
@@ -303,9 +366,9 @@ p2 <- stream_sucralose|>
 p1+p2
 ```
 
-
 ```{r}
 #summary statistics tables for results section
+
 #install.packages("gt")
 #install.packages("janitor")
 library("janitor")
@@ -331,10 +394,10 @@ tab2
 
 
 ### Suc dataset analysis
-
-Do duplicate measurements match their original?
-
 ```{r}
+#Do duplicate measurements match their original?
+#note: not used in final poster
+
 theme(theme_bw())
 duplicates <- sucralose|>
   filter(gage_name %in% c("San Marcos Springs","Comal Springs"),
@@ -364,9 +427,9 @@ dup_plot <- duplicates|>
 dup_plot
 ```
 
-Do DI blanks return the reporting detection limit?
-
 ```{r}
+#Do DI blanks return the reporting detection limit?
+#note: not used in final poster
 theme(theme_bw())
 blanks_plot <- false_pos|>
   ggplot()+
@@ -381,33 +444,4 @@ blanks_plot <- false_pos|>
   theme(legend.title = element_blank())+
   theme(legend.position = "bottom")
 blanks_plot
-```
-```{r}
-data <- data.frame(
-  x = c("Comal Springs","San Marcos Springs","WW influence", "Recreational influence","WW Effluent"),
-  y = c(9.65,16.0,680,76.5,2400))
-
-data$x <- factor(data$x, levels = c("Comal Springs","San Marcos Springs","Recreational influence","WW influence","WW Effluent"))
-                 
-theme_set(theme_bw())
-
-comp_plot <- ggplot()+
-  geom_col(aes(x=data$x, y=y, fill = data$x))+
-  geom_label(position = position_nudge(y = 100), aes(x=data$x,y=y,label = y), size = 3.25, label.size = 0)+
-  labs(x = "",
-       y = "Median SUC (ng/L)",
-       title = "Sucralose Concentrations with Varying Contamination")+
-  scale_fill_manual(
-    values = c("Comal Springs" = "darkslateblue", 
-               "San Marcos Springs" = "cornflowerblue",
-               "Recreational influence" = "darkslategray2",
-               "WW influence" = "darkturquoise",
-               "WW Effluent" = "darkcyan"))+
-  theme(axis.text.x = element_blank(),
-        legend.title = element_blank(),
-        axis.title.y = element_text(vjust = 1),
-        legend.position = "bottom")
-
-comp_plot
-ggsave(filename = "SUC_comparison_plot_titled.png")
 ```

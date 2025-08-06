@@ -1,2 +1,2 @@
 # Sucralose_Project
-Cleaned repo for sucralose and streamflow analysis of the Comal and San Marcos springs
+Analysis of sucralose and springflow in the Comal and San Marcos springs of the Edwards Aquifer
